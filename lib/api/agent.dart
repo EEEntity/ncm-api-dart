@@ -188,9 +188,9 @@ class MusicApiInterceptors extends InterceptorsWrapper {
     options.data = weApi(body).entries.map((e) => '${e.key}=${e.value}').join('&');
   }
   void _handleEApi(RequestOptions options, List<Cookie> cookies, EncryptType type) {
-    var oldUriStr = options.uri.toString();
+    var oldUriStr = options.uri.path;
     if (type == EncryptType.eApi) {
-      options.path = oldUriStr.replaceAll(RegExp(r'\w*api'), 'eapi');
+      options.path = '$defaultHost${oldUriStr.replaceAll(RegExp(r'\w*api'), 'eapi')}';
     }
     var header = {};
     Map<String, String> cookiesMap = cookies.fold(<String, String>{}, (map, element) {
@@ -217,7 +217,7 @@ class MusicApiInterceptors extends InterceptorsWrapper {
     options.data = Map.from(options.data);
     options.data['header'] = header;
     if (type == EncryptType.eApi){
-      var url = options.path.replaceAll('https://music.163.com', '');
+      var url = oldUriStr;
       var body = jsonEncode(options.data);
       options.data = eApi(url, body).entries.map((e) => '${e.key}=${e.value}').join('&');
     }
