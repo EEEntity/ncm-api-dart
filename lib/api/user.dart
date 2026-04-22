@@ -825,38 +825,38 @@ class UserLoginStateEntity {
 
 mixin UserApi{
   /// 登录手机接口
-  /// [phone] 手机号
-  /// [password] 密码，可选，提供验证码时无效
-  /// [captcha] 验证码，可选，提供此参数时密码失效
-  /// [countryCode] 国家代码，可选，默认为 '86'
-  /// [clientType] 客户端类型，可选，默认为 'android'
-  /// [rememberLogin] 是否记住登录状态，可选，默认为 true
+  /// [type] 登录方式？默认为1
   /// [https] 是否使用 HTTPS 请求，可选，默认为 true
+  /// [phone] 手机号
+  /// [countryCode] 国家代码，可选，默认为 '86'
+  /// [captcha] 验证码，可选，提供此参数时密码失效
+  /// [password] 密码，可选，需要md5加密
+  /// [rememberLogin] 是否记住登录状态，可选，默认为 true
   Future<LoginEntity?> loginCellPhone({
     required String phone,
     String? password,
     String? captcha,
+    String type = '1',
     String countryCode = '86',
-    String clientType = 'android',
-    bool rememberLogin = true,
+    String rememberLogin = 'true',
     bool https = true
   }) {
     final data = {
+      'type': 1,
+      'https': https,
       'phone': phone,
+      'countrycode': countryCode,
+      'remember': rememberLogin,
       if (captcha != null)
         'captcha': captcha
       else
         'password': password ?? '',
-      // if (captcha == null) 'password': password ?? '',
-      // if (captcha != null) 'captcha': captcha,
-        'countrycode': countryCode,
-        'clientType': clientType,
-        'rememberLogin': rememberLogin,
-        'https': https,
     };
     return SnowfluffMusicManager().post<LoginEntity>(
       url: NetEaseMusicAPI.loginWithPhone,
-      options: createOption(),
+      options: createOption(
+        encryptType: EncryptType.weApi
+      ),
       data: data,
       fromJson: (json) => LoginEntity.fromJson(json)
     );
@@ -869,12 +869,15 @@ mixin UserApi{
     String ctcode = '86',
   }) async {
     final data = {
-      'cellphone': phone,
       'ctcode': ctcode,
+      'secrete': 'music_middleuser_pclogin',
+      'cellphone': phone,
     };
     return await SnowfluffMusicManager().post<BoolEntity>(
       url: NetEaseMusicAPI.sendSmsCode,
-      options: createOption(),
+      options: createOption(
+        encryptType: EncryptType.weApi
+      ),
       data: data,
       fromJson: (json) => BoolEntity.fromJson(json)
     );
@@ -895,52 +898,54 @@ mixin UserApi{
     };
     return await SnowfluffMusicManager().post<BoolEntity>(
       url: NetEaseMusicAPI.verifySmsCode,
-      options: createOption(),
+      options: createOption(
+        encryptType: EncryptType.weApi
+      ),
       data: data,
       fromJson: (json) => BoolEntity.fromJson(json)
     );
   }
-  // TODO: 二维码接口需要测试
-  /// 二维码key
-  /// [type] 类型，可选，默认为3
+  /// 获取二维码key
+  /// [type] 类型，默认为3
   Future<QrcodeKeyEntity?> qrCodeKey({
-    int type = 1
+    int type = 3
   }) async {
     final data = {
       'type': type,
-      'timestamp': '${DateTime.now()}'
+      'e_r': false
     };
     return await SnowfluffMusicManager().post<QrcodeKeyEntity>(
       url: NetEaseMusicAPI.generateQrCodeKey,
       options: createOption(
-        encryptType: EncryptType.weApi
+        encryptType: EncryptType.eApi
       ),
       data: data,
       fromJson: (json) => QrcodeKeyEntity.fromJson(json)
     );
   }
-  /// 二维码
+  /// 生成二维码(本地拼接)
   /// [key] 二维码key
   String qrCode({
     required String key
   }) {
     return '$defaultUrl/login?codekey=$key';
   }
-  /// 检测二维码
-  /// [type] 类型，可选，默认为3
+  /// 检测二维码状态
+  /// [type] 类型，默认为3
+  /// 800：二维码过期，801：等待扫码，802：待确认，803：授权登录成功(返回cookies)
   Future<StringEntity?> checkQrCode({
     required String key,
-    int type = 1,
+    int type = 3,
   }) async {
     final data = {
       'key': key,
       'type': type,
-      'timerstamp': '${DateTime.now()}'
-    }; // TODO: 检查这里的'time^rstamp
+      'e_r': false
+    };
     return await SnowfluffMusicManager().post<StringEntity>(
       url: NetEaseMusicAPI.checkQrCode,
       options: createOption(
-        encryptType: EncryptType.weApi
+        encryptType: EncryptType.eApi
       ),
       data: data,
       fromJson: (json) => StringEntity.fromJson(json)
